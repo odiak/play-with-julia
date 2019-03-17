@@ -1,6 +1,6 @@
-using Distances
-
 module SOM
+
+using Distances
 
 export Config, State, init
 
@@ -42,13 +42,10 @@ end
 
 function meshgrid(d::Int, n::Int)::Array{Float64,2}
     x = zeros(n^2, d)
-    u = range(0.0, 1.0, length = n)
-    s = repeat([1], d)
+    u = repeat(range(0.0, 1.0, length = n), 1, repeat([n], d - 1)...)
     for i = 1:d
-        s[i] = n
-        print(s)
-        x[:,i] .= reshape(u, s...)
-        s[i] = 1
+        p = [if j == i; 1; elseif j == 1; i; else j; end for j = 1:d]
+        x[:,i] .= permutedims(u, p)[:]
     end
     return x
 end
@@ -71,7 +68,8 @@ function data_weight(bmus::Array{Int,1}, units::Array, neighborhood_radius::Floa
     A = R ./ sum(R, dims = 2)
 end
 
-function mstep(data::Array{Float64,2},
+function mstep(;
+        data::Array{Float64,2},
         units::Array{Float64,2},
         bmus::Array{Int,1},
         neighborhood_radius::Float64)::Array{Float64,2}
@@ -82,21 +80,27 @@ function fit(config::Config, state::State, data::Array{Float64,2})::State
     units = state.units
     bmus = something(state.bmus)
     reference_vectors = if state.reference_vectors == nothing
-        mstep(config, data, units, bmus, config.rad_init)
+        mstep(data = data, units = data, bmus = bmus, neighborhood_radius = config.rad_init)
     else
         state.reference_vectors
     end
 
+    println(sum(reference_vectors))
+
     for t = 1:100
         rad = config.rad_min + (config.rad_init - config.rad_min) * exp(-0.5 * t / config.rad_convergence^2)
-        bmus = estep(data, reference_vectors)
-        reference_vectors = mstep(data, units, bmus, rad)
+        bmus = estep(data = data, reference_vectors = reference_vectors)
+        reference_vectors = mstep(data = data, units = units, bmus = bmus, neighborhood_radius = rad)
     end
+
+    println(sum(reference_vectors))
 
     return State(units = units, bmus = bmus, reference_vectors = reference_vectors)
 end
 
 end
+
+using PyPlot
 
 function main()
     config = SOM.Config(n_data = 200, dim_data = 3, dim_latent = 2, n_units_per_side = 10)
@@ -105,6 +109,12 @@ function main()
 
     state = SOM.init(config)
     state = SOM.fit(config, state, X)
+
+    y = state.reference_vectors
+    shape = (config.n_units_per_side, config.n_units_per_side)
+
+    plot_wireframe(reshape(y[:,1], shape), reshape(y[:,2], shape), reshape(y[:,3], shape))
+    plt.show()
 end
 
 main()
