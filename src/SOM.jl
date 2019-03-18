@@ -88,7 +88,7 @@ function fit(config::Config, state::State, data::Array{Float64,2})::State
     println(sum(reference_vectors))
 
     for t = 1:100
-        rad = config.rad_min + (config.rad_init - config.rad_min) * exp(-0.5 * t / config.rad_convergence^2)
+        rad = config.rad_min + (config.rad_init - config.rad_min) * exp(- t * config.rad_convergence)
         bmus = estep(data = data, reference_vectors = reference_vectors)
         reference_vectors = mstep(data = data, units = units, bmus = bmus, neighborhood_radius = rad)
     end
