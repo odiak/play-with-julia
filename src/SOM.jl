@@ -85,15 +85,11 @@ function fit(config::Config, state::State, data::Array{Float64,2})::State
         state.reference_vectors
     end
 
-    println(sum(reference_vectors))
-
     for t = 1:100
         rad = config.rad_min + (config.rad_init - config.rad_min) * exp(- t * config.rad_convergence)
         bmus = estep(data = data, reference_vectors = reference_vectors)
         reference_vectors = mstep(data = data, units = units, bmus = bmus, neighborhood_radius = rad)
     end
-
-    println(sum(reference_vectors))
 
     return State(units = units, bmus = bmus, reference_vectors = reference_vectors)
 end
@@ -103,17 +99,16 @@ end
 using PyPlot
 
 function main()
-    config = SOM.Config(n_data = 200, dim_data = 3, dim_latent = 2, n_units_per_side = 10)
+    config = SOM.Config(n_data = 200, dim_data = 3, dim_latent = 2, n_units_per_side = 10, rad_min=0.2)
     X = rand(config.n_data, config.dim_data) .* 2 .- 1
     X[:, 3] = X[:, 1].^2 - X[:, 2].^2
 
     state = SOM.init(config)
     state = SOM.fit(config, state, X)
 
-    y = state.reference_vectors
-    shape = (config.n_units_per_side, config.n_units_per_side)
+    y_grid = reshape(state.reference_vectors, config.n_units_per_side, config.n_units_per_side, :)
 
-    plot_wireframe(reshape(y[:,1], shape), reshape(y[:,2], shape), reshape(y[:,3], shape))
+    plot_wireframe(y_grid[:,:,1], y_grid[:,:,2],y_grid[:,:,3])
     plt.show()
 end
 
