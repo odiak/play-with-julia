@@ -99,7 +99,7 @@ end
 using PyPlot
 
 function main()
-    config = SOM.Config(n_data = 200, dim_data = 3, dim_latent = 2, n_units_per_side = 10, rad_min=0.2)
+    config = SOM.Config(n_data = 200, dim_data = 3, dim_latent = 2, n_units_per_side = 10, rad_min = 0.2)
     X = rand(config.n_data, config.dim_data) .* 2 .- 1
     X[:, 3] = X[:, 1].^2 - X[:, 2].^2
 
@@ -108,7 +108,7 @@ function main()
 
     y_grid = reshape(state.reference_vectors, config.n_units_per_side, config.n_units_per_side, :)
 
-    plot_wireframe(y_grid[:,:,1], y_grid[:,:,2],y_grid[:,:,3])
+    plot_wireframe(y_grid[:,:,1], y_grid[:,:,2], y_grid[:,:,3])
     plt.show()
 end
 
